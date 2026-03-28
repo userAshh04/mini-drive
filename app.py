@@ -10,46 +10,14 @@ jwt = JWTManager(app)
 
 
 
-try:
-    client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=5000)
-    client.admin.command('ping')
-    db = client["mini_drive"]
-    USE_MONGODB = True
-except:
-    USE_MONGODB = False
-    USERS_FILE = "users.json"
-    FILES_FILE = "files.json"
-
-    for file in [USERS_FILE, FILES_FILE]:
-        if not os.path.exists(file):
-            with open(file, 'w') as f:
-                json.dump([], f)
-
-os.makedirs("uploads", exist_ok=True)
+client = MongoClient("mongodb://localhost:27017/")
+db = client["mini_drive"]
+USE_MONGODB = True
 
 
 
-def get_users():
-    if USE_MONGODB:
-        return db.users
-    with open(USERS_FILE) as f:
-        return json.load(f)
 
-def save_users(users):
-    if not USE_MONGODB:
-        with open(USERS_FILE, 'w') as f:
-            json.dump(users, f)
 
-def get_files():
-    if USE_MONGODB:
-        return db.files
-    with open(FILES_FILE) as f:
-        return json.load(f)
-
-def save_files(files):
-    if not USE_MONGODB:
-        with open(FILES_FILE, 'w') as f:
-            json.dump(files, f)
 
 
 
