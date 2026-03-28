@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - mini Drive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        .upload-section {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .files-section h3 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .file-list {
+            display: grid;
+            gap: 15px;
+        }
+        .file-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .file-name {
+            font-weight: 500;
+        }
+        .download-btn {
+            background: #2196F3;
+        }
+        .download-btn:hover {
+            background: #1976D2;
+        }
+        .logout-btn {
+            background: #f44336;
+            margin-top: 20px;
+        }
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>mini Drive Dashboard</h2>
+
+        <div class="upload-section">
+            <h3>Upload File</h3>
+            <input type="file" id="file">
+            <br>
+            <button onclick="upload()">Upload</button>
+        </div>
+
+        <div class="files-section">
+            <h3>Your Files</h3>
+            <div id="files" class="file-list"></div>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+    let token = localStorage.getItem('token');
+    if (!token) {
+        window.location = '/login';
+    }
+
+    function upload() {
+        let fileInput = document.getElementById('file');
+        let formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            loadFiles();
+        });
+    }
+
+    function loadFiles() {
+        fetch('/api/files', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`Status ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            let fileDiv = document.getElementById('files');
+            fileDiv.innerHTML = "";
+
+            if (data.files && data.files.length > 0) {
+                data.files.forEach(file => {
+                    fileDiv.innerHTML += `
+                        <div class="file-item">
+                            <span class="file-name">${file.original_filename || 'Unnamed File'}</span>
+                            <button class="download-btn" onclick="download('${file.stored_filename}')">Download</button>
+                        </div>
+                    `;
+                });
+            } else {
+                fileDiv.innerHTML = "<p>No files uploaded yet.</p>";
+            }
+        })
+        .catch(error => {
+            console.error('File loading error:', error);
+            document.getElementById('files').innerHTML = `<p style='color: #ffc107'>Could not load files: ${error.message}</p>`;
+        });
+    }
+
+    function download(filename) {
+        fetch('/api/download/' + filename, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Download failed: ' + res.status);
+            return res.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location = '/';
+    }
+
+    // Load files on page load
+    loadFiles();
+    </script>
+</body>
+</html>
