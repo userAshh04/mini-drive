@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = "mini-secret-key"
 jwt = JWTManager(app)
 
-# ------------------ STORAGE SETUP ------------------
+
 
 try:
     client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=5000)
@@ -27,7 +27,7 @@ except:
 
 os.makedirs("uploads", exist_ok=True)
 
-# ------------------ HELPERS ------------------
+
 
 def get_users():
     if USE_MONGODB:
@@ -51,7 +51,7 @@ def save_files(files):
         with open(FILES_FILE, 'w') as f:
             json.dump(files, f)
 
-# ------------------ PAGES ------------------
+
 
 @app.route("/")
 def index():
@@ -69,7 +69,6 @@ def register_page():
 def dashboard_page():
     return render_template("dashboard.html")
 
-# ------------------ AUTH ------------------
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -112,7 +111,7 @@ def login():
     token = create_access_token(identity=user_id)
     return {"token": token}
 
-# ------------------ FILE UPLOAD ------------------
+
 
 @app.route("/api/upload", methods=["POST"])
 @jwt_required()
@@ -144,7 +143,7 @@ def upload():
 
     return {"message": "File uploaded successfully"}
 
-# ------------------ LIST FILES ------------------
+
 
 @app.route("/api/files", methods=["GET"])
 @jwt_required()
@@ -172,7 +171,7 @@ def list_files():
 
     return {"files": files}
 
-# ------------------ DOWNLOAD ------------------
+
 
 @app.route("/api/download/<file_id>", methods=["GET"])
 @jwt_required()
@@ -189,7 +188,7 @@ def download_file(file_id):
 
     return send_file(file["filepath"], as_attachment=True, download_name=file["original_filename"])
 
-# ------------------
+
 
 if __name__ == "__main__":
     app.run(debug=True)
